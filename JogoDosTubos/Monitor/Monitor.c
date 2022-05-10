@@ -12,6 +12,7 @@ int _tmain(int argc, LPTSTR argv[]) {
     _setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
+    /*AQUI VAI SER A TAB*/
 
     return 0;
 }
