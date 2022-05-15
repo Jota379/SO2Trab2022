@@ -7,14 +7,32 @@
 #include "../Monitor/Jogo.h"
 #define TAM 200
 
-
-DWORD WINAPI Terminar(LPVOID param) {
-    int* sair = (int*)param;
-
-    _gettch();
-    (*sair) = 1;
+/*
+DWORD WINAPI leComandos(LPVOID param,int* stop) {
+    Memoria* m = (Memoria*)param;
+    int continua = 1;
+    while (continua) {
+        if (_tccmp(m->comando, _T("nenhum")) != 0) {
+            if (_tccmp(m->comando, _T("stop"))) {
+                m->jogo.stop = 0;
+                _tcscpy_s(m->comando,100,_T("nenhum"));
+            }
+            if (_tccmp(m->comando, _T("continua"))) {
+                m->jogo.stop = 1;
+                _tcscpy_s(m->comando,100,_T("nenhum"));
+            }
+            if (_tccmp(m->comando,_T("fim"))) {
+                _tcscpy_s(m->comando,100,_T("nenhum"));
+                m->jogo.ganhou = 3;
+                continua = 0;
+            }
+        }
+    }
     return 0;
 }
+
+*/
+
 
 void metestartEnd(TCHAR t[][20], int a, int l) {
     int auxA;
@@ -97,170 +115,172 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
         }
     }
     while (ganhou) {
-        if (t[auxA][auxL] == _T('I')) {
-            if (auxA == 0 && auxL > 0) {//teto
-                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃'))
+        //if (stop == 1) {
+            if (t[auxA][auxL] == _T('I')) {
+                if (auxA == 0 && auxL > 0) {//teto
+                    if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃'))
+                        auxA++;
+                    else {
+                        ganhou = 0;
+                        Sleep(100);
+                        return ganhou;
+                    }
+                }
+                else if (auxA >= 0 && auxL == 0) {//lado direito
+                    if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━'))
+                        auxL++;
+                    else {
+                        ganhou = 0;
+                        Sleep(100);
+                        return ganhou;
+                    }
+                }
+            }
+            else if (t[auxA][auxL] == _T('┏'))
+            {
+                t[auxA][auxL] = _T('*');
+                //verifica Final
+                if (t[auxA + 1][auxL] == _T('F') || t[auxA][auxL + 1] == _T('F')) {
+                    Sleep(100);
+                    return ganhou;
+                }
+
+                //baixo
+                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
                     auxA++;
-                else {
-                    ganhou = 0;
-                    Sleep(100);
-                    return ganhou;
                 }
-            }
-            else if (auxA >= 0 && auxL == 0) {//lado direito
-                if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━'))
+                //direita
+                else  if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
                     auxL++;
+                }
                 else {
                     ganhou = 0;
                     Sleep(100);
                     return ganhou;
                 }
-            }
-        }
-        else if (t[auxA][auxL] == _T('┏'))
-        {
-            t[auxA][auxL] = _T('*');
-            //verifica Final
-            if (t[auxA + 1][auxL] == _T('F') || t[auxA][auxL + 1] == _T('F')) {
-                Sleep(100);
-                return ganhou;
-            }
-
-            //baixo
-            if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
-                auxA++;
-            }
-            //direita
-            else  if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
-                auxL++;
-            }
-            else {
-                ganhou = 0;
-                Sleep(100);
-                return ganhou;
-            }
 
 
-        }
-        else if (t[auxA][auxL] == _T('┓'))
-        {
-            t[auxA][auxL] = _T('*');
-            //verifica Final
-            if (t[auxA + 1][auxL] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
-                Sleep(100);
-                return ganhou;
             }
+            else if (t[auxA][auxL] == _T('┓'))
+            {
+                t[auxA][auxL] = _T('*');
+                //verifica Final
+                if (t[auxA + 1][auxL] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
+                    Sleep(100);
+                    return ganhou;
+                }
 
-            //baixo
-            if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
-                auxA++;
-            }
-            //esquerda
-            else  if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
-                auxL--;
-            }
-            else {
-                ganhou = 0;
-                Sleep(100);
-                return ganhou;
-            }
+                //baixo
+                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
+                    auxA++;
+                }
+                //esquerda
+                else  if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
+                    auxL--;
+                }
+                else {
+                    ganhou = 0;
+                    Sleep(100);
+                    return ganhou;
+                }
 
-        }
-        else if (t[auxA][auxL] == _T('┛'))
-        {
-            t[auxA][auxL] = _T('*');
-            if (t[auxA - 1][auxL] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
-                Sleep(100);
-                return ganhou;
             }
-            //cima
-            if (t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┃')) {
-                auxA--;
-            }
-            //esquerda
-            else if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
-                auxL--;
-            }
-            else {
-                ganhou = 0;
-                Sleep(100);
-                return ganhou;
-            }
+            else if (t[auxA][auxL] == _T('┛'))
+            {
+                t[auxA][auxL] = _T('*');
+                if (t[auxA - 1][auxL] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
+                    Sleep(100);
+                    return ganhou;
+                }
+                //cima
+                if (t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┃')) {
+                    auxA--;
+                }
+                //esquerda
+                else if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
+                    auxL--;
+                }
+                else {
+                    ganhou = 0;
+                    Sleep(100);
+                    return ganhou;
+                }
 
 
 
-        }
-        else if (t[auxA][auxL] == _T('┗')) {
+            }
+            else if (t[auxA][auxL] == _T('┗')) {
 
-            t[auxA][auxL] = _T('*');
-            //verifica Final
-            if (t[auxA - 1][auxL] == _T('F') || t[auxA][auxL + 1] == _T('F')) {
-                Sleep(100);
-                return ganhou;
-            }
+                t[auxA][auxL] = _T('*');
+                //verifica Final
+                if (t[auxA - 1][auxL] == _T('F') || t[auxA][auxL + 1] == _T('F')) {
+                    Sleep(100);
+                    return ganhou;
+                }
 
-            //cima
-            if (t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┃')) {
-                auxA--;
-            }
-            //direita
-            else  if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
-                auxL++;
-            }
-            else {
-                ganhou = 0;
-                Sleep(100);
-                return ganhou;
-            }
+                //cima
+                if (t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┃')) {
+                    auxA--;
+                }
+                //direita
+                else  if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
+                    auxL++;
+                }
+                else {
+                    ganhou = 0;
+                    Sleep(100);
+                    return ganhou;
+                }
 
-        }
-        else if (t[auxA][auxL] == _T('━'))
-        {
-            t[auxA][auxL] = _T('*');
-            if (t[auxA][auxL + 1] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
-                Sleep(100);
-                return ganhou;
             }
-            //esquerda
-            if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
-                auxL--;
-                // direita
-            }
-            else if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
-                auxL++;
-            }
-            else {
-                ganhou = 0;
-                Sleep(100);
-                return ganhou;
-            }
+            else if (t[auxA][auxL] == _T('━'))
+            {
+                t[auxA][auxL] = _T('*');
+                if (t[auxA][auxL + 1] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
+                    Sleep(100);
+                    return ganhou;
+                }
+                //esquerda
+                if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
+                    auxL--;
+                    // direita
+                }
+                else if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
+                    auxL++;
+                }
+                else {
+                    ganhou = 0;
+                    Sleep(100);
+                    return ganhou;
+                }
 
-        }
-        else if (t[auxA][auxL] == _T('┃'))
-        {
-            t[auxA][auxL] = _T('*');
-            //verifica Final
-            if (t[auxA + 1][auxL] == _T('F') || t[auxA - 1][auxL] == _T('F')) {
-                Sleep(100);
-                return ganhou;
             }
+            else if (t[auxA][auxL] == _T('┃'))
+            {
+                t[auxA][auxL] = _T('*');
+                //verifica Final
+                if (t[auxA + 1][auxL] == _T('F') || t[auxA - 1][auxL] == _T('F')) {
+                    Sleep(100);
+                    return ganhou;
+                }
 
-            //baixo
-            if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
-                auxA++;
-            }
-            // cima
-            else if (t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┃')) {
-                auxA--;
-            }
-            else {
-                ganhou = 0;
-                Sleep(100);
-                return ganhou;
-            }
+                //baixo
+                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
+                    auxA++;
+                }
+                // cima
+                else if (t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┃')) {
+                    auxA--;
+                }
+                else {
+                    ganhou = 0;
+                    Sleep(100);
+                    return ganhou;
+                }
 
 
-        }
+            }
+        //}
         Sleep(2000);
     }
 
@@ -428,6 +448,12 @@ int _tmain(int argc, LPTSTR argv[]) {
         /*if (instancia) {
             ZeroMemory(ptr, sizeof(Memoria));
         }*/
+
+       /* _tcscpy_s(ptr->comando, 100, _T("nenhum"));
+        int tid;
+        int stop;
+        HANDLE comandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)leComandos, ptr, 0, &tid);
+*/
         ptr->jogo.ganhou = 2;
 
         while (ptr->jogo.ganhou == 2) {

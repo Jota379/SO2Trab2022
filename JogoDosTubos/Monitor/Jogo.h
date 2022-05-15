@@ -7,6 +7,7 @@ typedef struct JOGODOSTUBOS {
 
 typedef struct {
 	JOGO jogo;
+	char comando[100];
 	int in, out;
 	int nmonitores, nservidores;
 }Memoria;

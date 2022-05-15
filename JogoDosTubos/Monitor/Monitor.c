@@ -5,6 +5,20 @@
 #include <fcntl.h>
 #include "Jogo.h"
 
+/*
+DWORD WINAPI escreveComandos(LPVOID param) {
+    Memoria* m = (Memoria*)param;
+    while (_tccmp(m->comando, _T("fim")) != 0) {
+        if (_tccmp(m->comando, _T("nenhum"))!= 0) {
+            _fgetts(m->comando, 100, stdin);
+            m->comando[_tcslen(m->comando) - 1] = '\0';
+        }
+    }
+    return 0;
+}
+*/
+
+
 int _tmain(int argc, LPTSTR argv[]) {
 
     JOGO jogo;
@@ -31,6 +45,11 @@ int _tmain(int argc, LPTSTR argv[]) {
     }
 
     ptr->jogo.ganhou = 2;
+/*
+    int tid;
+    int stop;
+    HANDLE comandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)escreveComandos, ptr, 0, &tid);
+    */
 
     while (ptr->jogo.ganhou == 2) {
             jogo = ptr->jogo;
@@ -46,8 +65,11 @@ int _tmain(int argc, LPTSTR argv[]) {
     if (ptr->jogo.ganhou == 1) {
         _tprintf(_T("Ganhou"));
     }
-    else if (ptr->jogo.ganhou == 1) {
+    else if (ptr->jogo.ganhou == 0) {
         _tprintf(_T("Perdeu"));
+    }
+    else if (ptr->jogo.ganhou == 3) {
+        _tprintf(_T("Jogo fechado pelo admin"));
     }
 
     return 0;
