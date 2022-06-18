@@ -7,31 +7,52 @@
 #include "../Monitor/Jogo.h"
 #define TAM 200
 
-/*
-DWORD WINAPI leComandos(LPVOID param,int* stop) {
-    Memoria* m = (Memoria*)param;
-    int continua = 1;
-    while (continua) {
-        if (_tccmp(m->comando, _T("nenhum")) != 0) {
-            if (_tccmp(m->comando, _T("stop"))) {
-                m->jogo.stop = 0;
-                _tcscpy_s(m->comando,100,_T("nenhum"));
-            }
-            if (_tccmp(m->comando, _T("continua"))) {
-                m->jogo.stop = 1;
-                _tcscpy_s(m->comando,100,_T("nenhum"));
-            }
-            if (_tccmp(m->comando,_T("fim"))) {
-                _tcscpy_s(m->comando,100,_T("nenhum"));
-                m->jogo.ganhou = 3;
-                continua = 0;
-            }
+
+HANDLE semRead;
+HANDLE semWrite;
+HANDLE mutRead;
+HANDLE mutWrite;
+
+int stop=0;
+
+int leMonitorToServidor(MonToSer* m) {
+    _tprintf(_T("1"));
+    int comando;
+    _tprintf(_T("2"));
+    WaitForSingleObject(semRead, INFINITE);	
+    _tprintf(_T("3"));//obtem permissão apra escrever
+    WaitForSingleObject(mutRead, INFINITE);					//obtem permissão para mudar dados
+    _tprintf(_T("4"));
+    memcpy(&comando, &(m->comando[m->proxRead]), sizeof(comando));		//coloca o dados
+    _tprintf(_T("5"));
+    m->proxRead == (m->maxPos - 1) ? m->proxRead = 0 : m->proxRead++;		//aumenta o contador para escrita
+    _tprintf(_T("6"));
+    ReleaseMutex(mutRead);								//liberta a auturização para modificar dados
+    _tprintf(_T("7"));
+    if (ReleaseSemaphore(semWrite, 1, NULL) == 0)		//liberta autorização para ler o seeguinte
+        _tprintf(TEXT("\nErro a libertar semáforo %s -> %d\n"), MONITOR_TO_SERVIDOR_ESCREVER_SEMAFORO, GetLastError());
+    _tprintf(_T("OLA OLA"));
+    return comando;
+}
+
+DWORD WINAPI leComandos(LPVOID param) {
+    MonToSer* m = (MonToSer*)param;
+    int comando = leMonitorToServidor(m);
+    while (comando != OFF) {
+        if (comando == PARAR_AGUA) {
+            stop = leMonitorToServidor(m);
+            _tprintf(_T("Vou parar a água por %d s"), stop);
         }
+        else if (comando == MODO_ALEATORIO) {
+
+        }
+        comando = leMonitorToServidor(m);
     }
+    
     return 0;
 }
 
-*/
+
 
 
 void metestartEnd(TCHAR t[][20], int a, int l) {
@@ -115,6 +136,10 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
         }
     }
     while (ganhou) {
+        if (stop != 0) {
+            Sleep(stop * 1000);
+            stop = 0;
+        }
         //if (stop == 1) {
             if (t[auxA][auxL] == _T('I')) {
                 if (auxA == 0 && auxL > 0) {//teto
@@ -287,28 +312,18 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
     return ganhou;
 }
 
+void Tratakeys(JOGO *jogo) {
 
-int _tmain(int argc, LPTSTR argv[]) {
-    //CHAVES
     HKEY chave; //aberto ou fechado
     DWORD resultado; //o que aconteceu com a chave
     TCHAR caminho_chave[TAM] = TEXT("SOFTWARE\\PRESETTUBO\\PresetsJogo");
-    TCHAR chave_nome[TAM]= TEXT("PresetsJogo");
+    TCHAR chave_nome[TAM] = TEXT("PresetsJogo");
     TCHAR par_Altura_nome[TAM] = TEXT("Altura");
     TCHAR par_Altura_valor[TAM] = TEXT("10");
     TCHAR par_LARGURA_nome[TAM] = TEXT("Largura");
     TCHAR par_LARGURA_valor[TAM] = TEXT("10");
     TCHAR par_TEMPO_AGUA_nome[TAM] = TEXT("TempoSegundos");
     TCHAR par_TEMPO_AGUA_valor[TAM] = TEXT("5");
-    //============================================================
-    JOGO jogo;
-
-
-#ifdef UNICODE
-    _setmode(_fileno(stdin), _O_WTEXT);
-    _setmode(_fileno(stdout), _O_WTEXT);
-    _setmode(_fileno(stderr), _O_WTEXT);
-#endif
 
     if (RegCreateKeyEx(HKEY_CURRENT_USER,				//HKEY hKey -> qual a diretoria onde eu quero criar a chave,
         caminho_chave,						            //LPCTSTR lpSubKey -> qual é o nome desta chave
@@ -374,7 +389,7 @@ int _tmain(int argc, LPTSTR argv[]) {
     ) != ERROR_SUCCESS)
         _tprintf(TEXT("Atributo não foi encontrado! ERRO!\n"));
     else
-        jogo.altura = _ttoi(par_Altura_valor);//_tprintf(TEXT("Atributo encontrado com valor:%s e tamanho:%d\n"), par_Altura_valor, tamanho);
+        jogo->altura = _ttoi(par_Altura_valor);//_tprintf(TEXT("Atributo encontrado com valor:%s e tamanho:%d\n"), par_Altura_valor, tamanho);
 
     par_LARGURA_valor[0] = '\0'; // esta vazio
     tamanho = sizeof(par_LARGURA_valor);
@@ -389,7 +404,7 @@ int _tmain(int argc, LPTSTR argv[]) {
     ) != ERROR_SUCCESS)
         _tprintf(TEXT("Atributo não foi encontrado! ERRO!\n"));
     else
-        jogo.largura = _ttoi(par_LARGURA_valor);//_tprintf(TEXT("Atributo encontrado com valor:%s e tamanho:%d\n"), par_LARGURA_valor, tamanho);
+        jogo->largura = _ttoi(par_LARGURA_valor);//_tprintf(TEXT("Atributo encontrado com valor:%s e tamanho:%d\n"), par_LARGURA_valor, tamanho);
 
     par_TEMPO_AGUA_valor[0] = '\0'; // esta vazio
     tamanho = sizeof(par_TEMPO_AGUA_valor);
@@ -404,14 +419,113 @@ int _tmain(int argc, LPTSTR argv[]) {
     ) != ERROR_SUCCESS)
         _tprintf(TEXT("Atributo não foi encontrado! ERRO!\n"));
     else
-        jogo.tempo_agua = _ttoi(par_TEMPO_AGUA_valor);//_tprintf(TEXT("Atributo encontrado com valor:%s e tamanho:%d\n"), par_TEMPO_AGUA_valor, tamanho);
+        jogo->tempo_agua = _ttoi(par_TEMPO_AGUA_valor);//_tprintf(TEXT("Atributo encontrado com valor:%s e tamanho:%d\n"), par_TEMPO_AGUA_valor, tamanho);
 
 //logica de jogo e afins
 
 
-        RegCloseKey(chave);
+    RegCloseKey(chave);
 
+}
+
+void existeUnicidade() {
+
+    HANDLE existe = CreateFileMapping(
+        INVALID_HANDLE_VALUE,		
+        NULL,
+        PAGE_READWRITE,
+        0,
+        sizeof(TCHAR),
+        _T("ALREADY_CREATED_SERVER")
+    );
+    if (existe == NULL) {
+        _tprintf(_T("Não foi possivel criar map unicidade \nA desligar\n"));
+        exit(1);
+    }
+    else if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        _tprintf(_T("Ja se encontra ligada uma instancia do Servidor\nA desligar\n"));
+        exit(2);
+    }
+
+}
+
+int _tmain(int argc, LPTSTR argv[]) {
+
+    existeUnicidade();
+    JOGO jogo;
+
+
+#ifdef UNICODE
+    _setmode(_fileno(stdin), _O_WTEXT);
+    _setmode(_fileno(stdout), _O_WTEXT);
+    _setmode(_fileno(stderr), _O_WTEXT);
+#endif
+
+    if (argc == 1) {
+        Tratakeys(&jogo);
+    }
+    else {
         
+    }
+
+
+
+    //Semafro para ler
+    //Semafro para escrever
+    //Mutex para ler
+    //Mutex para escrever
+    semRead = CreateSemaphore(NULL, 0, 10, MONITOR_TO_SERVIDOR_LER_SEMAFORO);
+    semWrite = CreateSemaphore(NULL, 1, 10, MONITOR_TO_SERVIDOR_ESCREVER_SEMAFORO);
+    mutRead = CreateMutex(NULL, FALSE, MONITOR_TO_SERVIDOR_LER_MUTEX);
+    mutWrite = CreateMutex(NULL, FALSE, MONITOR_TO_SERVIDOR_ESCREVER_MUTEX);
+    HANDLE waitStart = CreateMutex( NULL, TRUE, MONITOR_TO_SERVIDOR_START_MUTEX);
+    
+
+
+    HANDLE mapMonToServ = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MonToSer), MONITOR_TO_SERVIDOR_MAP);
+    if (mapMonToServ == NULL) {
+        _tprintf(_T("Erro a criar o FileMap do MonToSer: %d"), GetLastError());
+        CloseHandle(mapMonToServ);
+        return -1;
+    }
+
+    MonToSer* ptrMonToServ = (MonToSer*)MapViewOfFile(mapMonToServ, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    if (ptrMonToServ == NULL) {
+        _tprintf(_T("Erro a criar o MonToSer: %d"), GetLastError());
+        return -1;
+    }
+   
+    //WaitForSingleObject(waitStart, INFINITE);
+
+    int tid;
+    HANDLE comandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)leComandos, ptrMonToServ,0, &tid);
+    int continuaPJ = 0;
+    TCHAR comandoSer[100];
+    TCHAR* token;
+    while (continuaPJ == 0) {
+        _tprintf(_T("->"));
+        _fgetts(comandoSer, 100, stdin);
+        token = _tcstok(comandoSer, " ");
+        if (_tccmp(token, _T("altura")) == 0) {
+            token = _tcstok(NULL, " ");
+            jogo.altura = _ttoi(token);
+        }
+        if (_tccmp(token, _T("largura")) == 0) {
+            token = _tcstok(NULL, " ");
+            jogo.largura = _ttoi(token);
+        }
+        if (_tccmp(token, _T("agua")) == 0) {
+            token = _tcstok(NULL, " ");
+            jogo.tempo_agua = _ttoi(token);
+        }
+        if (_tccmp(token, _T("continua"))==0) {
+            continuaPJ =1;
+        }
+        if (_tccmp(token, _T("help")) == 0) {
+            _tprintf(_T("altura <n> \n largura <n> \n agua <n> (em segundos) \n continua"));
+        }
+    }
+
 
         //Gera Area de jogo
         for (int i = 0; i < jogo.altura; i++)
