@@ -7,6 +7,8 @@
 #include "../Monitor/Jogo.h"
 #define TAM 200
 
+#define PIPE_JOGO TEXT("\\\\.\\pipe\\teste")
+
 
 HANDLE semRead;
 HANDLE semWrite;
@@ -25,6 +27,23 @@ int leMonitorToServidor(MonToSer* m) {
     if (ReleaseSemaphore(semWrite, 1, NULL) == 0)		//liberta autorização para ler o seeguinte
         _tprintf(TEXT("\nErro a libertar semáforo %s -> %d\n"), MONITOR_TO_SERVIDOR_ESCREVER_SEMAFORO, GetLastError());
     return comando;
+}
+
+DWORD WINAPI criaPipes(LPVOID param) {
+    MonToSer* m = (MonToSer*)param;
+    int comando = leMonitorToServidor(m);
+    while (comando != OFF) {
+        if (comando == PARAR_AGUA) {
+            stop = leMonitorToServidor(m);
+            _tprintf(_T("Vou parar a água por %d s"), stop);
+        }
+        else if (comando == MODO_ALEATORIO) {
+            _tprintf(_T("Modo Aleatorio por implementar"));
+        }
+        comando = leMonitorToServidor(m);
+    }
+
+    return 0;
 }
 
 DWORD WINAPI leComandos(LPVOID param) {
