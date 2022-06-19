@@ -49,22 +49,6 @@ TCHAR szProgName[] = TEXT("Cliente");
 //        	   ShowWindow()
 
 
-//BITMAP
-// uma vez que temos de usar estas vars tanto na main como na funcao de tratamento de eventos
-// nao ha uma maneira de fugir ao uso de vars globais, dai estarem aqui
-HBITMAP hBmp; // handle para o bitmap
-HDC bmpDC; // hdc do bitmap
-BITMAP bmp; // informação sobre o bitmap
-int xBitmap; // posicao onde o bitmap vai ser desenhado
-int yBitmap;
-
-int limDir; // limite direito
-HWND hWndGlobal; // handle para a janela
-HANDLE hMutex;
-
-HDC memDC = NULL; // copia do device context que esta em memoria, tem de ser inicializado a null
-HBITMAP hBitmapDB; // copia as caracteristicas da janela original para a janela que vai estar em memoria
-
 int WINAPI WinMain(HINSTANCE hInst, // instancia atual app
 	HINSTANCE hPrevInst,//
 	LPSTR lpCmdLine, int nCmdShow) {
@@ -131,20 +115,7 @@ int WINAPI WinMain(HINSTANCE hInst, // instancia atual app
 		0);				// Não há parâmetros adicionais para a janela
 
 
-	HDC hdc; // representa a propria janela
-	RECT rect;
 
-	// carregar o bitmap
-	hBmp = (HBITMAP)LoadImage(NULL, TEXT("Imagens/jogo1.bmp"), IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
-	GetObject(hBmp, sizeof(bmp), &bmp); // vai buscar info sobre o handle do bitmap
-
-	hdc = GetDC(hWnd);
-	// criamos copia do device context e colocar em memoria
-	bmpDC = CreateCompatibleDC(hdc);
-	// aplicamos o bitmap ao device context
-	SelectObject(bmpDC, hBmp);
-
-	ReleaseDC(hWnd, hdc);
 
 	// ============================================================================
 	// 4. Mostrar a janela
@@ -194,11 +165,32 @@ int WINAPI WinMain(HINSTANCE hInst, // instancia atual app
 
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 	LPARAM lParam) {
+	HDC hdc;
 	HDC dc;
 	PAINTSTRUCT ps;
 	static int x = 0, y = 0;
 	TCHAR texto[100];
+	static int aux = 0;
 	static HWND hNovoJogo, hObjetivo, hSair;
+
+	//BITMAP
+	// uma vez que temos de usar estas vars tanto na main como na funcao de tratamento de eventos
+	// nao ha uma maneira de fugir ao uso de vars globais, dai estarem aqui
+	HBITMAP hBmp,hBmp1,hBmp2,hBmp3,hBmp4,hBmp5,hBmp6; // handle para o bitmap
+	static HDC bmpDC, bmpDC1, bmpDC2, bmpDC3, bmpDC4, bmpDC5, bmpDC6; // hdc do bitmap
+	static BITMAP bmp, bmp1, bmp2, bmp3, bmp4, bmp5, bmp6; // informação sobre o bitmap
+	int xBitmap; // posicao onde o bitmap vai ser desenhado
+	int yBitmap;
+	int xPos, yPos, numClicks = 1;
+	int limDir; // limite direito
+	HWND hWndGlobal; // handle para a janela
+	HANDLE hMutex;
+
+	HDC memDC = NULL; // copia do device context que esta em memoria, tem de ser inicializado a null
+	HBITMAP hBitmapDB; // copia as caracteristicas da janela original para a janela que vai estar em memoria
+
+	RECT rect;
+
 	switch (messg) {
 	case WM_COMMAND:
 	{
@@ -207,6 +199,10 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 			DestroyWindow(hNovoJogo);
 			DestroyWindow(hObjetivo);
 			DestroyWindow(hSair);
+
+			aux = 1;
+			InvalidateRect(hWnd, NULL, TRUE);
+
 			break;
 		case 2:
 			/*DestroyWindow(hNovoJogo);
@@ -226,10 +222,126 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 	}
 	break;
 	case WM_CREATE:
+
+		// carregar o bitmap
+		hBmp = (HBITMAP)LoadImage(NULL, TEXT("jogo1.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp, sizeof(bmp), &bmp); // vai buscar info sobre o handle do bitmap
+
+		hBmp1 = (HBITMAP)LoadImage(NULL, TEXT("horizontal.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp1, sizeof(bmp1), &bmp1); // vai buscar info sobre o handle do bitmap
+
+		hBmp2 = (HBITMAP)LoadImage(NULL, TEXT("vertical.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp2, sizeof(bmp2), &bmp2); // vai buscar info sobre o handle do bitmap
+
+		hBmp3 = (HBITMAP)LoadImage(NULL, TEXT("cima.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp3, sizeof(bmp3), &bmp3); // vai buscar info sobre o handle do bitmap
+
+		hBmp4 = (HBITMAP)LoadImage(NULL, TEXT("dir.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp4, sizeof(bmp4), &bmp4); // vai buscar info sobre o handle do bitmap
+
+		hBmp5 = (HBITMAP)LoadImage(NULL, TEXT("baixo.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp5, sizeof(bmp5), &bmp5); // vai buscar info sobre o handle do bitmap
+
+		hBmp6 = (HBITMAP)LoadImage(NULL, TEXT("esq.bmp"), IMAGE_BITMAP, 50, 50, LR_LOADFROMFILE);
+		GetObject(hBmp6, sizeof(bmp6), &bmp6); // vai buscar info sobre o handle do bitmap
+		
+
+		hdc = GetDC(hWnd);
+		// criamos copia do device context e colocar em memoria
+		bmpDC = CreateCompatibleDC(hdc);
+		// aplicamos o bitmap ao device context
+		SelectObject(bmpDC, hBmp);	
+		///////////////
+		bmpDC1 = CreateCompatibleDC(hdc);
+
+		SelectObject(bmpDC1, hBmp1);
+		///////////////
+		bmpDC2 = CreateCompatibleDC(hdc);
+
+		SelectObject(bmpDC2, hBmp2);
+		///////////////
+		bmpDC3 = CreateCompatibleDC(hdc);
+	
+		SelectObject(bmpDC3, hBmp3);
+		///////////////
+		bmpDC4 = CreateCompatibleDC(hdc);
+	
+		SelectObject(bmpDC4, hBmp4);
+		///////////////
+		bmpDC5 = CreateCompatibleDC(hdc);
+		
+		SelectObject(bmpDC5, hBmp5);
+		///////////////
+		bmpDC6 = CreateCompatibleDC(hdc);
+		
+		SelectObject(bmpDC6, hBmp6);
+
+		ReleaseDC(hWnd, hdc);
+
+		BitBlt(hdc, 15, 30, bmp.bmWidth, bmp.bmHeight, bmpDC, 0, 0, SRCCOPY);
+
 		hNovoJogo = CreateWindowW(L"Button", L"Novo Jogo", WS_VISIBLE | WS_CHILD, 250, 340, 200, 50, hWnd, (HMENU)1, NULL, NULL);
 		hObjetivo = CreateWindowW(L"Button", L"Objetivo", WS_VISIBLE | WS_CHILD, 250, 390, 200, 50, hWnd, (HMENU)2, NULL, NULL);
 		hSair = CreateWindowW(L"Button", L"Sair", WS_VISIBLE | WS_CHILD, 250, 440, 200, 50, hWnd, (HMENU)3, NULL, NULL);
+
 		break;
+	case WM_PAINT:
+
+		//aux = 1;
+		if (aux == 1) {
+			//MessageBox(hWnd, _T("janela de ajuda"), _T("Sair"), MB_OK);
+			hdc = BeginPaint(hWnd, &ps);
+			int i = 0, j;
+			int Lx1 = 15, Lx2 = 65;
+			int Cy1 = 30, Cy2 = 80;
+			for (j = 0; j < 10; j++) {
+				for (i = 0; i < 10; i++) {
+					Rectangle(hdc, Lx1, Cy1, Lx2, Cy2);
+					Lx1 = Lx2;
+					Lx2 = Lx2 + 50;
+				}
+				Cy1 = Cy2;
+				Cy2 = Cy2 + 50;
+				Lx1 = 15, Lx2 = 65;
+				/*BitBlt(hdc, 15, 30, bmp1.bmWidth, bmp1.bmHeight, bmpDC1, 0, 0, SRCCOPY);
+				BitBlt(hdc, 50, 45, bmp2.bmWidth, bmp2.bmHeight, bmpDC2, 0, 0, SRCCOPY);
+				BitBlt(hdc, 150, 45, bmp3.bmWidth, bmp3.bmHeight, bmpDC3, 0, 0, SRCCOPY);
+				BitBlt(hdc, 200, 90, bmp4.bmWidth, bmp4.bmHeight, bmpDC4, 0, 0, SRCCOPY);
+				BitBlt(hdc, 300, 40, bmp5.bmWidth, bmp5.bmHeight, bmpDC5, 0, 0, SRCCOPY);
+				BitBlt(hdc, 450, 80, bmp6.bmWidth, bmp6.bmHeight, bmpDC6, 0, 0, SRCCOPY);*/
+			}
+			EndPaint(hWnd, &ps);
+			//aux = 0;
+		}
+		break;
+
+
+	case WM_LBUTTONDOWN: // <-BOTAO ESQUERDO, BOTADO DIREITO -> WM_RBUTTONDOWN
+		numClicks++;
+		xPos = GET_X_LPARAM(lParam);
+		yPos = GET_Y_LPARAM(lParam);
+		hdc = GetDC(hWnd); //A função GetDC recupera um identificador para um contexto de dispositivo (DC)
+		GetClientRect(hWnd, &rect);
+		SetTextColor(hdc, RGB(139, 0, 0));
+		SetBkMode(hdc, TRANSPARENT);
+		rect.left = xPos;
+		rect.top = yPos;
+		BitBlt(hdc, 15, 30, bmp1.bmWidth, bmp1.bmHeight, bmpDC1, 0, 0, SRCCOPY);
+		BitBlt(hdc, 50, 45, bmp2.bmWidth, bmp2.bmHeight, bmpDC2, 0, 0, SRCCOPY);
+		BitBlt(hdc, 150, 45, bmp3.bmWidth, bmp3.bmHeight, bmpDC3, 0, 0, SRCCOPY);
+		BitBlt(hdc, 200, 90, bmp4.bmWidth, bmp4.bmHeight, bmpDC4, 0, 0, SRCCOPY);
+		BitBlt(hdc, 300, 40, bmp5.bmWidth, bmp5.bmHeight, bmpDC5, 0, 0, SRCCOPY);
+		BitBlt(hdc, 450, 80, bmp6.bmWidth, bmp6.bmHeight, bmpDC6, 0, 0, SRCCOPY);
+		//ReleaseDC(hWnd, hdc);
+	/*	if (aux == 0)
+			aux = 1;
+		else
+			aux = 0;*/
+		InvalidateRect(hWnd, NULL, TRUE); // requisita WM_PAINT
+		break;
+	//case WM_RBUTTONDOWN:
+	////rodar imagem
+	//break;
 	case WM_CLOSE: // Destruir a janela e terminar o programa 
 		if (MessageBox(hWnd, TEXT("Quer mesmo sair?"), TEXT("Fim"),
 			MB_YESNO) == IDYES)
