@@ -26,7 +26,7 @@ typedef struct COMUNICAÇÂO {
 
 typedef struct {
 	JOGO jogo;
-	char comando[100];
+	//char comando[100];
 	//int in, out;
 	//int nmonitores, nservidores;
 }Memoria;
