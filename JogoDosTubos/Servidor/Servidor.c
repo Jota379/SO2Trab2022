@@ -572,7 +572,7 @@ int _tmain(int argc, LPTSTR argv[]) {
         int stop;
         HANDLE comandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)leComandos, ptr, 0, &tid);
 */
-
+        //FICA À ESPERA DO CLIENTE
         
         ptr->jogo.ganhou = 2;
 
