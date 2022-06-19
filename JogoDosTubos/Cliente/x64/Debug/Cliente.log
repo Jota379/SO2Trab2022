@@ -1,6 +1,10 @@
 ﻿  Cliente.c
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(135,7): warning C4101: 'rect': unreferenced local variable
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(198,14): warning C4101: 'ps': unreferenced local variable
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(197,6): warning C4101: 'dc': unreferenced local variable
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(200,8): warning C4101: 'texto': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(186,7): warning C4101: 'hWndGlobal': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(187,9): warning C4101: 'hMutex': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(182,6): warning C4101: 'xBitmap': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(190,10): warning C4101: 'hBitmapDB': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(169,6): warning C4101: 'dc': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(183,6): warning C4101: 'yBitmap': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(172,8): warning C4101: 'texto': unreferenced local variable
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(185,6): warning C4101: 'limDir': unreferenced local variable
   Cliente.vcxproj -> C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\x64\Debug\Cliente.exe
