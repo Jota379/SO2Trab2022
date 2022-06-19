@@ -16,22 +16,14 @@ HANDLE mutWrite;
 int stop=0;
 
 int leMonitorToServidor(MonToSer* m) {
-    _tprintf(_T("1"));
     int comando;
-    _tprintf(_T("2"));
-    WaitForSingleObject(semRead, INFINITE);	
-    _tprintf(_T("3"));//obtem permissão apra escrever
+    WaitForSingleObject(semRead, INFINITE);	//obtem permissão apra escrever
     WaitForSingleObject(mutRead, INFINITE);					//obtem permissão para mudar dados
-    _tprintf(_T("4"));
     memcpy(&comando, &(m->comando[m->proxRead]), sizeof(comando));		//coloca o dados
-    _tprintf(_T("5"));
     m->proxRead == (m->maxPos - 1) ? m->proxRead = 0 : m->proxRead++;		//aumenta o contador para escrita
-    _tprintf(_T("6"));
     ReleaseMutex(mutRead);								//liberta a auturização para modificar dados
-    _tprintf(_T("7"));
     if (ReleaseSemaphore(semWrite, 1, NULL) == 0)		//liberta autorização para ler o seeguinte
         _tprintf(TEXT("\nErro a libertar semáforo %s -> %d\n"), MONITOR_TO_SERVIDOR_ESCREVER_SEMAFORO, GetLastError());
-    _tprintf(_T("OLA OLA"));
     return comando;
 }
 
@@ -49,6 +41,17 @@ DWORD WINAPI leComandos(LPVOID param) {
         comando = leMonitorToServidor(m);
     }
     
+    return 0;
+}
+
+DWORD WINAPI CorreAgua(LPVOID param) {
+    Memoria* m = (Memoria*)param;
+    while (m->jogo.ganhou == 2) {
+        m->jogo.ganhou = correAgua(m->jogo.tab, m->jogo.altura, m->jogo.largura, m->jogo.tempo_agua);
+        //pipe com o jogo para o cliente
+
+    }
+
     return 0;
 }
 
@@ -95,6 +98,7 @@ void escolheLocal(TCHAR t[][20], int a, int l) {
             aprovado = 0;
         }
     }
+    //substituir por pipe de receber posição e caracter do cliente é provavel que só precises da ultima linha desta função
 
     if (c == _T('┏')) {
         while (1 > opcao || opcao > 4) {
@@ -339,8 +343,10 @@ void Tratakeys(JOGO *jogo) {
     }
 
     //é porque a chave foi criada
-    if (resultado == REG_CREATED_NEW_KEY)
+    if (resultado == REG_CREATED_NEW_KEY) {
         _tprintf(TEXT("A chave foi criada: %s\n"), chave_nome);
+    }
+        
     //é porque a chave ja existe e foi aberta
     else
         _tprintf(TEXT("A chave foi aberta:%s\n"), chave_nome);
@@ -461,12 +467,9 @@ int _tmain(int argc, LPTSTR argv[]) {
     _setmode(_fileno(stderr), _O_WTEXT);
 #endif
 
-    if (argc == 1) {
-        Tratakeys(&jogo);
-    }
-    else {
-        
-    }
+    Tratakeys(&jogo);
+
+
 
 
 
@@ -533,19 +536,19 @@ int _tmain(int argc, LPTSTR argv[]) {
                 jogo.tab[i][j] = _T('█');
 
         //mete Começo(I) e FIM(F) na tabela aleatoriamente
-        //metestartEnd(jogo.tab, jogo.altura, jogo.largura);
+        metestartEnd(jogo.tab, jogo.altura, jogo.largura);
 
         //TABULEIRO PREDEFINIDO
-        jogo.tab[2][0] = _T('I');
+        /*jogo.tab[2][0] = _T('I');
         for (int i = 1; i < jogo.altura - 1; i++)
             jogo.tab[2][i] = _T('━');
-        jogo.tab[2][jogo.altura - 1] = _T('F');
+        jogo.tab[2][jogo.altura - 1] = _T('F');*/
         //=======================================================
         jogo.ganhou = 2;
         //PARA escolher a peça
-        //while (memoria.jogo.ganhou == 2) {
-        //    escolheLocal(memoria.jogo.tab, memoria.jogo.altura, memoria.jogo.largura);
-        //}
+        /*while (jogo.ganhou == 2) {
+            escolheLocal(jogo.tab, jogo.altura, jogo.largura);
+        }*/
 
         HANDLE map = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(Memoria), _T("JOGODOSTUBOS"));
         if (map == NULL) {
@@ -568,12 +571,17 @@ int _tmain(int argc, LPTSTR argv[]) {
         int stop;
         HANDLE comandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)leComandos, ptr, 0, &tid);
 */
+
+        
         ptr->jogo.ganhou = 2;
 
+        ptr->jogo = jogo;
+
+        HANDLE  agua = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CorreAgua, ptr, 0, &tid);
+
         while (ptr->jogo.ganhou == 2) {
-            ptr->jogo = jogo;
-            ptr->jogo.ganhou = correAgua(ptr->jogo.tab, ptr->jogo.altura,ptr->jogo.largura,ptr->jogo.tempo_agua);
-            
+            escolheLocal(ptr->jogo.tab, ptr->jogo.altura, ptr->jogo.largura);
+            //envias para o Cliente
         }
 
 
