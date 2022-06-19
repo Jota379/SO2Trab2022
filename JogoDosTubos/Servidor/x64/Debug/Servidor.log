@@ -1,0 +1,16 @@
+﻿  Servidor.c
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(338,18): warning C4098: 'Tratakeys': 'void' function returning a value
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(354,25): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'const BYTE *'
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(355,23): warning C4267: 'function': conversion from 'size_t' to 'DWORD', possible loss of data
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(364,26): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'const BYTE *'
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(365,23): warning C4267: 'function': conversion from 'size_t' to 'DWORD', possible loss of data
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(374,29): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'const BYTE *'
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(375,23): warning C4267: 'function': conversion from 'size_t' to 'DWORD', possible loss of data
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(387,25): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'LPBYTE'
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(402,26): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'LPBYTE'
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(417,29): warning C4133: 'function': incompatible types - from 'TCHAR [200]' to 'LPBYTE'
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(508,40): warning C4133: 'function': incompatible types - from 'char [2]' to 'const wchar_t *const '
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(510,38): warning C4133: 'function': incompatible types - from 'char [2]' to 'const wchar_t *const '
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(514,38): warning C4133: 'function': incompatible types - from 'char [2]' to 'const wchar_t *const '
+C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Servidor\Servidor.c(518,38): warning C4133: 'function': incompatible types - from 'char [2]' to 'const wchar_t *const '
+  Servidor.vcxproj -> C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\x64\Debug\Servidor.exe
