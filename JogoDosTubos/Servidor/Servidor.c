@@ -36,7 +36,7 @@ DWORD WINAPI leComandos(LPVOID param) {
             _tprintf(_T("Vou parar a água por %d s"), stop);
         }
         else if (comando == MODO_ALEATORIO) {
-
+            _tprintf(_T("Modo Aleatorio por implementar"));
         }
         comando = leMonitorToServidor(m);
     }
@@ -90,6 +90,7 @@ void escolheLocal(TCHAR t[][20], int a, int l) {
     TCHAR c;
 
     c = pegaAPeca();
+    //Envia peça a jogar pelo pipe
 
     while (aprovado) {
         _tprintf(_T("Quais as Coordenadas pretendidas para a peça %c ?"), c);
