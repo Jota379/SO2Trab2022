@@ -1,7 +1,0 @@
-﻿  Monitor.c
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Monitor\Monitor.c(38,37): warning C4133: 'function': incompatible types - from 'char [2]' to 'const wchar_t *const '
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Monitor\Monitor.c(41,38): warning C4133: 'function': incompatible types - from 'char [2]' to 'const wchar_t *const '
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Monitor\Monitor.c(45,51): warning C4047: 'function': 'const wchar_t *' differs in levels of indirection from 'int'
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Monitor\Monitor.c(45,47): warning C4024: '_tccmp': different types for formal and actual parameter 2
-C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\Monitor\Monitor.c(82,13): warning C4013: '_setmode' undefined; assuming extern returning int
-  Monitor.vcxproj -> C:\Users\eduar\Desktop\UNIVERSIDADE\2ano\2SEMESTRE\SO2\TP\SO2Trab2022\JogoDosTubos\x64\Debug\Monitor.exe
