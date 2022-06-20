@@ -1,0 +1,12 @@
+﻿  Cliente.c
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(240,7): warning C4101: 'hWndGlobal': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(241,9): warning C4101: 'hMutex': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(236,6): warning C4101: 'xBitmap': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(244,10): warning C4101: 'hBitmapDB': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(212,7): warning C4101: 'resultado': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(204,6): warning C4101: 'dc': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(213,13): warning C4101: 'ovl': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(237,6): warning C4101: 'yBitmap': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(207,8): warning C4101: 'texto': variável local não referenciada
+C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Cliente\Cliente.c(239,6): warning C4101: 'limDir': variável local não referenciada
+  Cliente.vcxproj -> C:\SO2TRAB\SO2Trab2022\JogoDosTubos\Debug\Cliente.exe

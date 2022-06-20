@@ -12,7 +12,10 @@
 
 #include <stdio.h>
 
-#define PIPE_JOGO TEXT("\\\\.\\pipe\\teste")
+HANDLE hpipeCliServ;
+HANDLE hpipeServCli;
+HANDLE hjanela;
+TCHAR c;
 
 /* ===================================================== */
 /* Programa base (esqueleto) para aplicações Windows     */
@@ -163,8 +166,33 @@ int WINAPI WinMain(HINSTANCE hInst, // instancia atual app
 	return((int)lpMsg.wParam);	// Retorna sempre o parâmetro wParam da estrutura lpMsg
 }
 
-DWORD WINAPI recebeJogo(LPVOID param) {
+DWORD WINAPI TrecebeJogo(LPVOID param) {
 	JOGO* j = (JOGO*)param;
+	BOOL ret;
+	DWORD n;
+	if (!WaitNamedPipe(SERVIDOR_TO_CLIENTE_PIPE, NMPWAIT_WAIT_FOREVER)) {
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), SERVIDOR_TO_CLIENTE_PIPE);
+		exit(-1);
+	}
+	_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
+	hpipeServCli = CreateFile(SERVIDOR_TO_CLIENTE_PIPE, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hpipeServCli == NULL) {
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), SERVIDOR_TO_CLIENTE_PIPE);
+		exit(-1);
+	}
+	_tprintf(TEXT("[LEITOR] Liguei-me...\n"));
+
+	while (1) {
+		ret = ReadFile(hpipeServCli, j, sizeof(JOGO), &n, NULL);
+		if (!ret || !n) {
+			_tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, n);
+			break;
+		}
+
+		c = j->peça;
+		InvalidateRect(hjanela,NULL,TRUE);
+	}
 	
 
 	return 0;
@@ -179,6 +207,25 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 	TCHAR texto[100];
 	static int aux = 0;
 	static HWND hNovoJogo, hObjetivo, hSair;
+	
+	HANDLE ev = CreateEvent(NULL, TRUE, FALSE, NULL);
+	BOOL resultado;
+	OVERLAPPED ovl;
+
+	
+	if (!WaitNamedPipe(CLIENTE_TO_SERVIDOR_PIPE, NMPWAIT_WAIT_FOREVER)) {
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), CLIENTE_TO_SERVIDOR_PIPE);
+		exit(-1);
+	}
+	_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
+	hpipeCliServ = CreateFile(CLIENTE_TO_SERVIDOR_PIPE, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hpipeCliServ == NULL) {
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), CLIENTE_TO_SERVIDOR_PIPE);
+		exit(-1);
+	}
+	_tprintf(TEXT("[LEITOR] Liguei-me...\n"));
+	
 
 	//BITMAP
 	// uma vez que temos de usar estas vars tanto na main como na funcao de tratamento de eventos
@@ -192,11 +239,15 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 	int limDir; // limite direito
 	HWND hWndGlobal; // handle para a janela
 	HANDLE hMutex;
-	JOGO jogo;
+	JOGO *jogo;
 	HDC memDC = NULL; // copia do device context que esta em memoria, tem de ser inicializado a null
 	HBITMAP hBitmapDB; // copia as caracteristicas da janela original para a janela que vai estar em memoria
+	CLITOSERV pos;
+	DWORD n;
 
 	RECT rect;
+
+	HANDLE  recebeJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)TrecebeJogo, &jogo, 0, NULL);
 
 	switch (messg) {
 	case WM_COMMAND:
@@ -207,8 +258,9 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 			DestroyWindow(hObjetivo);
 			DestroyWindow(hSair);
 
-			HANDLE  recebeJogo = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)recebeJogo, &jogo, 0, NULL);
+			hjanela = hWnd;
 
+			
 			aux = 1;
 			InvalidateRect(hWnd, NULL, TRUE);
 
@@ -303,25 +355,65 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 		}
 		if (aux == 1) {
 			//MessageBox(hWnd, _T("janela de ajuda"), _T("Sair"), MB_OK);
+			Sleep(5000);
 			hdc = BeginPaint(hWnd, &ps);
 			int i = 0, j;
-			int Lx1 = 15, Lx2 = 65;
-			int Cy1 = 30, Cy2 = 80;
-			for (j = 0; j < 10; j++) {
-				for (i = 0; i < 10; i++) {
-					Rectangle(hdc, Lx1, Cy1, Lx2, Cy2);
+			int Lx1 = 100, Lx2 = 150;
+			int Cy1 = 100, Cy2 = 150;
+			for (j = 0; j < jogo->altura; j++) {
+				for (i = 0; i < jogo->largura; i++) {
+					if (jogo->tab[j][i] == _T('█')) {
+						Rectangle(hdc, Lx1, Cy1, Lx2, Cy2);
+
+					}else if (jogo->tab[j][i] == _T('┃')) {
+						BitBlt(hdc, Lx1, Cy1, bmp2.bmWidth, bmp2.bmHeight, bmpDC2, 0, 0, SRCCOPY);
+
+					}else if (jogo->tab[j][i] == _T('━')) {
+						BitBlt(hdc, Lx1, Cy1, bmp1.bmWidth, bmp1.bmHeight, bmpDC1, 0, 0, SRCCOPY);
+
+					}else if (jogo->tab[j][i] == _T('┛')) {
+						BitBlt(hdc, Lx1, Cy1, bmp3.bmWidth, bmp3.bmHeight, bmpDC3, 0, 0, SRCCOPY);
+
+					}else if (jogo->tab[j][i] == _T('┓')) {
+						BitBlt(hdc, Lx1,Cy1, bmp6.bmWidth, bmp6.bmHeight, bmpDC6, 0, 0, SRCCOPY);
+
+					}else if (jogo->tab[j][i] == _T('┏')) {
+						BitBlt(hdc, Lx1, Cy1, bmp5.bmWidth, bmp5.bmHeight, bmpDC5, 0, 0, SRCCOPY);
+
+					}else if (jogo->tab[j][i] == _T('┗')) {
+						BitBlt(hdc, Lx1, Cy1, bmp4.bmWidth, bmp4.bmHeight, bmpDC4, 0, 0, SRCCOPY);
+
+					}
 					Lx1 = Lx2;
 					Lx2 = Lx2 + 50;
 				}
 				Cy1 = Cy2;
 				Cy2 = Cy2 + 50;
 				Lx1 = 15, Lx2 = 65;
-				BitBlt(hdc, 15, 30, bmp1.bmWidth, bmp1.bmHeight, bmpDC1, 0, 0, SRCCOPY);
-				BitBlt(hdc, 50, 45, bmp2.bmWidth, bmp2.bmHeight, bmpDC2, 0, 0, SRCCOPY);
-				BitBlt(hdc, 150, 45, bmp3.bmWidth, bmp3.bmHeight, bmpDC3, 0, 0, SRCCOPY);
-				BitBlt(hdc, 200, 90, bmp4.bmWidth, bmp4.bmHeight, bmpDC4, 0, 0, SRCCOPY);
-				BitBlt(hdc, 300, 40, bmp5.bmWidth, bmp5.bmHeight, bmpDC5, 0, 0, SRCCOPY);
-				BitBlt(hdc, 450, 80, bmp6.bmWidth, bmp6.bmHeight, bmpDC6, 0, 0, SRCCOPY);
+				
+				switch (c) {
+					case _T('┃'):
+						BitBlt(hdc, 50, 50, bmp2.bmWidth, bmp2.bmHeight, bmpDC2, 0, 0, SRCCOPY);
+						break;
+					case _T('━'):
+						BitBlt(hdc, 50, 50, bmp1.bmWidth, bmp1.bmHeight, bmpDC1, 0, 0, SRCCOPY);
+						break;
+					case _T('┛'):
+						BitBlt(hdc, 50, 50, bmp3.bmWidth, bmp3.bmHeight, bmpDC3, 0, 0, SRCCOPY);
+						break;
+					case _T('┓'):
+						BitBlt(hdc, 50, 50, bmp6.bmWidth, bmp6.bmHeight, bmpDC6, 0, 0, SRCCOPY);
+						break;
+					case _T('┏'):
+						BitBlt(hdc, 50, 50, bmp5.bmWidth, bmp5.bmHeight, bmpDC5, 0, 0, SRCCOPY);
+						break;
+					case _T('┗'):
+						BitBlt(hdc, 50, 50, bmp4.bmWidth, bmp4.bmHeight, bmpDC4, 0, 0, SRCCOPY);
+						break;
+				}
+				
+				
+				
 			}
 			EndPaint(hWnd, &ps);
 			//aux = 0;
@@ -339,12 +431,18 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 		SetBkMode(hdc, TRANSPARENT);
 		rect.left = xPos;
 		rect.top = yPos;
-		BitBlt(hdc, xPos, yPos, bmp1.bmWidth, bmp1.bmHeight, bmpDC1, 0, 0, SRCCOPY);
-		BitBlt(hdc, xPos, yPos, bmp2.bmWidth, bmp2.bmHeight, bmpDC2, 0, 0, SRCCOPY);
-		BitBlt(hdc, xPos, yPos, bmp3.bmWidth, bmp3.bmHeight, bmpDC3, 0, 0, SRCCOPY);
-		BitBlt(hdc, xPos, yPos, bmp4.bmWidth, bmp4.bmHeight, bmpDC4, 0, 0, SRCCOPY);
-		BitBlt(hdc, xPos, yPos, bmp5.bmWidth, bmp5.bmHeight, bmpDC5, 0, 0, SRCCOPY);
-		BitBlt(hdc, xPos, yPos, bmp6.bmWidth, bmp6.bmHeight, bmpDC6, 0, 0, SRCCOPY);
+		pos.posx = (xPos - 150) / 50;
+		pos.posy = (xPos - 150) / 50;
+		pos.c = c;
+		if (pos.posx > 0 && pos.posy > 0 && pos.posx <= jogo->altura && pos.posy <= jogo->largura) {
+			if (WriteFile(hpipeCliServ, &pos, sizeof(CLITOSERV), &n, NULL)) {
+				_tprintf(TEXT("[ERRO] Escrever no pipe! Provavelmente este cliente se foi embora (WriteFile)\n"));
+				DisconnectNamedPipe(hpipeCliServ);
+				CloseHandle(hpipeCliServ);
+				hpipeCliServ = NULL;
+			}
+		}
+		
 		//ReleaseDC(hWnd, hdc);
 	/*	if (aux == 0)
 			aux = 1;
@@ -353,11 +451,10 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 		InvalidateRect(hWnd, NULL, TRUE); // requisita WM_PAINT
 		break;
 	case WM_RBUTTONDOWN:
-		CHAR c;
+		
 
 		if (c == _T('┗')) {
 			c = _T('┏');
-
 		}
 		if (c == _T('┏')) {
 			c = _T('┓');
@@ -368,6 +465,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam,
 		if (c == _T('┛')) {
 			c = _T('┗');
 		}
+		InvalidateRect(hWnd, NULL, TRUE);
 	break;
 	case WM_CLOSE: // Destruir a janela e terminar o programa 
 		if (MessageBox(hWnd, TEXT("Quer mesmo sair?"), TEXT("Fim"),

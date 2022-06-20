@@ -19,10 +19,11 @@
 typedef struct JOGODOSTUBOS {
 	TCHAR tab[20][20];
 	int altura, largura, tempo_agua;
+	TCHAR peça;
 	int stop, ganhou;
 }JOGO;
 
-typedef struct COMUNICAÇÂO {
+typedef struct COMUNICACAO {
 	int posx, posy;
 	TCHAR c;
 }CLITOSERV;

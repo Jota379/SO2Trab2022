@@ -14,6 +14,9 @@ HANDLE semRead;
 HANDLE semWrite;
 HANDLE mutRead;
 HANDLE mutWrite;
+HANDLE hpipeServCli;
+HANDLE hpipeCliServ;
+BOOL ret;
 
 int stop=0;
 
@@ -66,7 +69,7 @@ DWORD WINAPI leComandos(LPVOID param) {
 DWORD WINAPI CorreAgua(LPVOID param) {
     Memoria* m = (Memoria*)param;
     while (m->jogo.ganhou == 2) {
-        m->jogo.ganhou = correAgua(m->jogo.tab, m->jogo.altura, m->jogo.largura, m->jogo.tempo_agua);
+        m->jogo.ganhou = correAgua(&(m->jogo));
         //pipe com o jogo para o cliente
 
     }
@@ -104,22 +107,33 @@ TCHAR pegaAPeca() {
     return c;
 }
 
-void escolheLocal(TCHAR t[][20], int a, int l) {
+void escolheLocal(JOGO *j/*TCHAR t[][20], int a, int l*/) {
     int auxA, auxL, aprovado = 1, opcao = 0;
     TCHAR c;
+    DWORD n;
+    CLITOSERV cts;
 
-    c = pegaAPeca();
+    j->peça = pegaAPeca();
     //Envia peça a jogar pelo pipe
+    if (WriteFile(hpipeServCli, j, sizeof(JOGO), &n, NULL)) {
+        _tprintf(TEXT("[ERRO] Escrever no pipe! Provavelmente este cliente se foi embora (WriteFile)\n"));
+        DisconnectNamedPipe(hpipeServCli);
+        CloseHandle(hpipeServCli);
+        hpipeServCli = NULL;
+    }
 
-    while (aprovado) {
-        _tprintf(_T("Quais as Coordenadas pretendidas para a peça %c ?"), c);
-        _tscanf_s(_T("%d %d"), &auxA, &auxL);
-        if ((auxA <= a && auxL <= l) && t[auxA - 1][auxL - 1] == _T('█')) {
-            aprovado = 0;
+    
+
+    while (1) {
+        ret = ReadFile(hpipeServCli, &cts, sizeof(CLITOSERV), &n, NULL);
+        if (!ret || !n) {
+            _tprintf(TEXT("[LEITOR] %d %d... (ReadFile)\n"), ret, n);
+            break;
         }
     }
+    
     //substituir por pipe de receber posição e caracter do cliente é provavel que só precises da ultima linha desta função
-
+    /*
     if (c == _T('┏')) {
         while (1 > opcao || opcao > 4) {
             _tprintf(_T("Quais a rotação desejada?/n 1: ┏ /n 2: ┓ /n 3: ┛ /n 4: ┗ "));
@@ -142,32 +156,40 @@ void escolheLocal(TCHAR t[][20], int a, int l) {
         default:
             break;
         }
-    }
-    t[auxA - 1][auxL - 1] = c;
+    }*/
+    Sleep(2000);
+    j->tab[cts.posx - 1][cts.posy - 1] = cts.c;
 
 }
 
-int correAgua(TCHAR t[][20], int a, int l,int tempo) {
+int correAgua(JOGO* jogo/*TCHAR t[][20], int a, int l, int tempo*/) {
     int auxA = 0, auxL = 0, ganhou = 1;
-    Sleep(tempo * 1000);
+    DWORD n;
+    Sleep(jogo->tempo_agua * 1000);
     //printf("DEBUG ENTROU");
-    for (int i = 0; i < a; i++) {
-        for (int j = 0; j < l; j++) {
-            if (t[i][j] == _T('I')) {
+    for (int i = 0; i < jogo->altura; i++) {
+        for (int j = 0; j < jogo->largura; j++) {
+            if (jogo->tab[i][j] == _T('I')) {
                 auxA = i;
                 auxL = j;
             }
         }
     }
     while (ganhou) {
+        if (WriteFile(hpipeServCli, jogo, sizeof(JOGO), &n, NULL)) {
+            _tprintf(TEXT("[ERRO] Escrever no pipe! Provavelmente este cliente se foi embora (WriteFile)\n"));
+            DisconnectNamedPipe(hpipeServCli);
+            CloseHandle(hpipeServCli);
+            hpipeServCli = NULL;
+        }
         if (stop != 0) {
             Sleep(stop * 1000);
             stop = 0;
         }
         //if (stop == 1) {
-            if (t[auxA][auxL] == _T('I')) {
+            if (jogo->tab[auxA][auxL] == _T('I')) {
                 if (auxA == 0 && auxL > 0) {//teto
-                    if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃'))
+                    if (jogo->tab[auxA + 1][auxL] == _T('┗') || jogo->tab[auxA + 1][auxL] == _T('┛') || jogo->tab[auxA + 1][auxL] == _T('┃'))
                         auxA++;
                     else {
                         ganhou = 0;
@@ -176,7 +198,7 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
                     }
                 }
                 else if (auxA >= 0 && auxL == 0) {//lado direito
-                    if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━'))
+                    if (jogo->tab[auxA][auxL + 1] == _T('┛') || jogo->tab[auxA][auxL + 1] == _T('┓') || jogo->tab[auxA][auxL + 1] == _T('━'))
                         auxL++;
                     else {
                         ganhou = 0;
@@ -185,21 +207,21 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
                     }
                 }
             }
-            else if (t[auxA][auxL] == _T('┏'))
+            else if (jogo->tab[auxA][auxL] == _T('┏'))
             {
-                t[auxA][auxL] = _T('*');
+                jogo->tab[auxA][auxL] = _T('*');
                 //verifica Final
-                if (t[auxA + 1][auxL] == _T('F') || t[auxA][auxL + 1] == _T('F')) {
+                if (jogo->tab[auxA + 1][auxL] == _T('F') || jogo->tab[auxA][auxL + 1] == _T('F')) {
                     Sleep(100);
                     return ganhou;
                 }
 
                 //baixo
-                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
+                if (jogo->tab[auxA + 1][auxL] == _T('┗') || jogo->tab[auxA + 1][auxL] == _T('┛') || jogo->tab[auxA + 1][auxL] == _T('┃')) {
                     auxA++;
                 }
                 //direita
-                else  if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
+                else  if (jogo->tab[auxA][auxL + 1] == _T('┛') || jogo->tab[auxA][auxL + 1] == _T('┓') || jogo->tab[auxA][auxL + 1] == _T('━')) {
                     auxL++;
                 }
                 else {
@@ -210,21 +232,21 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
 
 
             }
-            else if (t[auxA][auxL] == _T('┓'))
+            else if (jogo->tab[auxA][auxL] == _T('┓'))
             {
-                t[auxA][auxL] = _T('*');
+                jogo->tab[auxA][auxL] = _T('*');
                 //verifica Final
-                if (t[auxA + 1][auxL] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
+                if (jogo->tab[auxA + 1][auxL] == _T('F') || jogo->tab[auxA][auxL - 1] == _T('F')) {
                     Sleep(100);
                     return ganhou;
                 }
 
                 //baixo
-                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
+                if (jogo->tab[auxA + 1][auxL] == _T('┗') || jogo->tab[auxA + 1][auxL] == _T('┛') || jogo->tab[auxA + 1][auxL] == _T('┃')) {
                     auxA++;
                 }
                 //esquerda
-                else  if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
+                else  if (jogo->tab[auxA][auxL - 1] == _T('┗') || jogo->tab[auxA][auxL - 1] == _T('┏') || jogo->tab[auxA][auxL - 1] == _T('━')) {
                     auxL--;
                 }
                 else {
@@ -234,19 +256,19 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
                 }
 
             }
-            else if (t[auxA][auxL] == _T('┛'))
+            else if (jogo->tab[auxA][auxL] == _T('┛'))
             {
-                t[auxA][auxL] = _T('*');
-                if (t[auxA - 1][auxL] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
+                jogo->tab[auxA][auxL] = _T('*');
+                if (jogo->tab[auxA - 1][auxL] == _T('F') || jogo->tab[auxA][auxL - 1] == _T('F')) {
                     Sleep(100);
                     return ganhou;
                 }
                 //cima
-                if (t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┃')) {
+                if (jogo->tab[auxA - 1][auxL] == _T('┏') || jogo->tab[auxA - 1][auxL] == _T('┓') || jogo->tab[auxA - 1][auxL] == _T('┃')) {
                     auxA--;
                 }
                 //esquerda
-                else if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
+                else if (jogo->tab[auxA][auxL - 1] == _T('┗') || jogo->tab[auxA][auxL - 1] == _T('┏') || jogo->tab[auxA][auxL - 1] == _T('━')) {
                     auxL--;
                 }
                 else {
@@ -258,21 +280,21 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
 
 
             }
-            else if (t[auxA][auxL] == _T('┗')) {
+            else if (jogo->tab[auxA][auxL] == _T('┗')) {
 
-                t[auxA][auxL] = _T('*');
+                jogo->tab[auxA][auxL] = _T('*');
                 //verifica Final
-                if (t[auxA - 1][auxL] == _T('F') || t[auxA][auxL + 1] == _T('F')) {
+                if (jogo->tab[auxA - 1][auxL] == _T('F') || jogo->tab[auxA][auxL + 1] == _T('F')) {
                     Sleep(100);
                     return ganhou;
                 }
 
                 //cima
-                if (t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┃')) {
+                if (jogo->tab[auxA - 1][auxL] == _T('┏') || jogo->tab[auxA - 1][auxL] == _T('┓') || jogo->tab[auxA - 1][auxL] == _T('┃')) {
                     auxA--;
                 }
                 //direita
-                else  if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
+                else  if (jogo->tab[auxA][auxL + 1] == _T('┛') || jogo->tab[auxA][auxL + 1] == _T('┓') || jogo->tab[auxA][auxL + 1] == _T('━')) {
                     auxL++;
                 }
                 else {
@@ -282,19 +304,19 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
                 }
 
             }
-            else if (t[auxA][auxL] == _T('━'))
+            else if (jogo->tab[auxA][auxL] == _T('━'))
             {
-                t[auxA][auxL] = _T('*');
-                if (t[auxA][auxL + 1] == _T('F') || t[auxA][auxL - 1] == _T('F')) {
+                jogo->tab[auxA][auxL] = _T('*');
+                if (jogo->tab[auxA][auxL + 1] == _T('F') || jogo->tab[auxA][auxL - 1] == _T('F')) {
                     Sleep(100);
                     return ganhou;
                 }
                 //esquerda
-                if (t[auxA][auxL - 1] == _T('┗') || t[auxA][auxL - 1] == _T('┏') || t[auxA][auxL - 1] == _T('━')) {
+                if (jogo->tab[auxA][auxL - 1] == _T('┗') || jogo->tab[auxA][auxL - 1] == _T('┏') || jogo->tab[auxA][auxL - 1] == _T('━')) {
                     auxL--;
                     // direita
                 }
-                else if (t[auxA][auxL + 1] == _T('┛') || t[auxA][auxL + 1] == _T('┓') || t[auxA][auxL + 1] == _T('━')) {
+                else if (jogo->tab[auxA][auxL + 1] == _T('┛') || jogo->tab[auxA][auxL + 1] == _T('┓') || jogo->tab[auxA][auxL + 1] == _T('━')) {
                     auxL++;
                 }
                 else {
@@ -304,21 +326,21 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
                 }
 
             }
-            else if (t[auxA][auxL] == _T('┃'))
+            else if (jogo->tab[auxA][auxL] == _T('┃'))
             {
-                t[auxA][auxL] = _T('*');
+            jogo->tab[auxA][auxL] = _T('*');
                 //verifica Final
-                if (t[auxA + 1][auxL] == _T('F') || t[auxA - 1][auxL] == _T('F')) {
+                if (jogo->tab[auxA + 1][auxL] == _T('F') || jogo->tab[auxA - 1][auxL] == _T('F')) {
                     Sleep(100);
                     return ganhou;
                 }
 
                 //baixo
-                if (t[auxA + 1][auxL] == _T('┗') || t[auxA + 1][auxL] == _T('┛') || t[auxA + 1][auxL] == _T('┃')) {
+                if (jogo->tab[auxA + 1][auxL] == _T('┗') || jogo->tab[auxA + 1][auxL] == _T('┛') || jogo->tab[auxA + 1][auxL] == _T('┃')) {
                     auxA++;
                 }
                 // cima
-                else if (t[auxA - 1][auxL] == _T('┓') || t[auxA - 1][auxL] == _T('┏') || t[auxA - 1][auxL] == _T('┃')) {
+                else if (jogo->tab[auxA - 1][auxL] == _T('┓') || jogo->tab[auxA - 1][auxL] == _T('┏') || jogo->tab[auxA - 1][auxL] == _T('┃')) {
                     auxA--;
                 }
                 else {
@@ -331,6 +353,12 @@ int correAgua(TCHAR t[][20], int a, int l,int tempo) {
             }
         //}
         Sleep(2000);
+    }
+    if (WriteFile(hpipeServCli, jogo, sizeof(JOGO), &n, NULL)) {
+        _tprintf(TEXT("[ERRO] Escrever no pipe! Provavelmente este cliente se foi embora (WriteFile)\n"));
+        DisconnectNamedPipe(hpipeServCli);
+        CloseHandle(hpipeServCli);
+        hpipeServCli = NULL;
     }
 
     return ganhou;
@@ -522,6 +550,20 @@ int _tmain(int argc, LPTSTR argv[]) {
 
     int tid;
     HANDLE comandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)leComandos, ptrMonToServ,0, &tid);
+
+
+    hpipeServCli = CreateNamedPipe(SERVIDOR_TO_CLIENTE_PIPE, PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1,
+        sizeof(JOGO), sizeof(JOGO), 1000, NULL);
+    if (hpipeServCli == INVALID_HANDLE_VALUE) {
+        _tprintf(TEXT("[Escritor] Nº de instâncias máximas em simultâneo atingido (CreateNamedPipe\n"));
+    }
+
+    hpipeCliServ = CreateNamedPipe(CLIENTE_TO_SERVIDOR_PIPE, PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1,
+        sizeof(CLITOSERV), sizeof(CLITOSERV), 1000, NULL);
+    if (hpipeServCli == INVALID_HANDLE_VALUE) {
+        _tprintf(TEXT("[Escritor] Nº de instâncias máximas em simultâneo atingido (CreateNamedPipe\n"));
+    }
+
     int continuaPJ = 0;
     TCHAR comandoSer[100];
     TCHAR* token;
@@ -565,6 +607,32 @@ int _tmain(int argc, LPTSTR argv[]) {
         jogo.tab[2][jogo.altura - 1] = _T('F');*/
         //=======================================================
         jogo.ganhou = 2;
+
+        HANDLE ev = CreateEvent(NULL, TRUE, FALSE, NULL);
+        BOOL resultado;
+        OVERLAPPED ovl;
+
+        _tprintf(TEXT("[ESCRITOR] Esperar ligação de um Cliente... (ConnectNamedPipe)\n"));
+        resultado = ConnectNamedPipe(hpipeServCli, &ovl);
+        if (!resultado && GetLastError() == ERROR_IO_PENDING) {
+            WaitForSingleObject(ev, INFINITE);
+        }
+        else if (!resultado && GetLastError() != ERROR_PIPE_CONNECTED) {
+            _tprintf(_T("Erro!"));
+        }
+
+        HANDLE evB = CreateEvent(NULL, TRUE, FALSE, NULL);
+        BOOL resultadoB;
+        OVERLAPPED ovlB;
+
+        _tprintf(TEXT("[ESCRITOR] Esperar ligação de um Cliente... (ConnectNamedPipe)\n"));
+        resultadoB = ConnectNamedPipe(hpipeCliServ, &ovlB);
+        if (!resultadoB && GetLastError() == ERROR_IO_PENDING) {
+            WaitForSingleObject(evB, INFINITE);
+        }
+        else if (!resultadoB && GetLastError() != ERROR_PIPE_CONNECTED) {
+            _tprintf(_T("Erro!"));
+        }
         //PARA escolher a peça
         /*while (jogo.ganhou == 2) {
             escolheLocal(jogo.tab, jogo.altura, jogo.largura);
@@ -599,8 +667,10 @@ int _tmain(int argc, LPTSTR argv[]) {
 
         HANDLE  agua = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)CorreAgua, ptr, 0, &tid);
 
+        Sleep(2000);
+
         while (ptr->jogo.ganhou == 2) {
-            escolheLocal(ptr->jogo.tab, ptr->jogo.altura, ptr->jogo.largura);
+            escolheLocal(ptr);
             //envias para o Cliente
         }
 
